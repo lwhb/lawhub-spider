@@ -37,7 +37,7 @@ class GianSpider(scrapy.Spider):
     def parse_keika(self, response):
         def build_json(response):
             data = dict()
-            for row in response.xpath('//table/tr[position()>1]'):  # skip header
+            for row in response.xpath('//table/tr')[1:]:  # skip header
                 try:
                     td1, td2 = row.xpath('td')
                     key = td1.xpath('.//text()').get()
