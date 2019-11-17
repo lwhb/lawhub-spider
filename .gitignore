@@ -1,0 +1,16 @@
+# Ignore everything
+*
+
+# Whitelist anything that's a directory
+!*/
+
+# ignore certain directory
+.ipynb_checkpoints/
+
+# Add all the file types I'm interested in.
+!.gitignore
+!*.md
+!*.py
+!*.cfg
+
+# add all the filename I'm interested in.
