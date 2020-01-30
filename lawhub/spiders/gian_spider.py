@@ -35,11 +35,11 @@ class GianSpider(scrapy.Spider):
                     self.log(f'failed to parse HONBUN link from row:\n{row.get()}', level=logging.WARNING)
 
     def parse_keika(self, response):
-        def build_json(response):
+        def build_dict(response):
             data = dict()
             for row in response.xpath('//table/tr')[1:]:  # skip header
                 try:
-                    td1, td2 = row.xpath('td')
+                    td1, td2 = row.xpath('./td')
                     key = td1.xpath('.//text()').get()
                     val = td2.xpath('.//text()').get() or ''
                     data[key] = val
@@ -57,7 +57,7 @@ class GianSpider(scrapy.Spider):
 
         json_path = directory / 'keika.json'
         with open(json_path, 'w') as f:
-            json.dump(build_json(response), f, ensure_ascii=False)
+            json.dump(build_dict(response), f, ensure_ascii=False)
         self.log(f'saved {json_path}')
 
     def parse_honbun(self, response):
@@ -73,7 +73,7 @@ class GianSpider(scrapy.Spider):
             self.log(f'failed to parse HONBUN link from {response.url}', level=logging.WARNING)
 
     def parse_houan(self, response):
-        def build_json(response):
+        def build_dict(response):
             data = dict()
             try:
                 data['title'] = response.xpath('//div[@id="mainlayout"]/div[@class="WordSection1"]/p[3]/text()').get().strip()
@@ -102,5 +102,5 @@ class GianSpider(scrapy.Spider):
 
         json_path = directory / 'houan.json'
         with open(json_path, 'w') as f:
-            json.dump(build_json(response), f, ensure_ascii=False)
+            json.dump(build_dict(response), f, ensure_ascii=False)
         self.log(f'saved {json_path}')
