@@ -12,5 +12,6 @@
 !*.md
 !*.py
 !*.cfg
+!*.yml
 
 # add all the filename I'm interested in.
