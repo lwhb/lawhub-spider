@@ -1,8 +1,8 @@
-import json
 import logging
-from pathlib import Path
 
 import scrapy
+
+from lawhub.items import HouanItem, KeikaItem, KeikaHtmlItem, HouanHtmlItem
 
 
 class GianSpider(scrapy.Spider):
@@ -10,6 +10,9 @@ class GianSpider(scrapy.Spider):
     start_urls = [
         'http://www.shugiin.go.jp/internet/itdb_gian.nsf/html/gian/menu.htm'
     ]
+    custom_settings = {
+        'ITEM_PIPELINES': {'lawhub.pipelines.GianPipeline': 0}
+    }
 
     def parse(self, response):
         for table, category in zip(response.xpath('//table')[:3], ('syuhou', 'sanhou', 'kakuhou')):
@@ -35,7 +38,7 @@ class GianSpider(scrapy.Spider):
                     self.log(f'failed to parse HONBUN link from row:\n{row.get()}', level=logging.WARNING)
 
     def parse_keika(self, response):
-        def build_dict(response):
+        def build_keika_item(response):
             data = dict()
             for row in response.xpath('//table/tr')[1:]:  # skip header
                 try:
@@ -45,20 +48,13 @@ class GianSpider(scrapy.Spider):
                     data[key] = val
                 except ValueError as e:
                     self.log(f'failed to parse key-value:\n{row.get()}')
-            return data
+            return KeikaItem(meta=response.meta, data=data)
 
-        directory = Path('./data/{0}/{1}/{2}'.format(response.meta['category'], response.meta['kaiji'], response.meta['number']))
-        directory.mkdir(parents=True, exist_ok=True)
+        def build_keika_html_item(response):
+            return KeikaHtmlItem(meta=response.meta, html=response.body)
 
-        html_path = directory / 'keika.html'
-        with open(html_path, 'wb') as f:
-            f.write(response.body)
-        self.log(f'saved {html_path}')
-
-        json_path = directory / 'keika.json'
-        with open(json_path, 'w') as f:
-            json.dump(build_dict(response), f, ensure_ascii=False)
-        self.log(f'saved {json_path}')
+        yield build_keika_item(response)
+        yield build_keika_html_item(response)
 
     def parse_honbun(self, response):
         houan_link = None
@@ -73,34 +69,27 @@ class GianSpider(scrapy.Spider):
             self.log(f'failed to parse HONBUN link from {response.url}', level=logging.WARNING)
 
     def parse_houan(self, response):
-        def build_dict(response):
-            data = dict()
+        def build_houan_item(response):
+            item = HouanItem(meta=response.meta)
             try:
-                data['title'] = response.xpath('//div[@id="mainlayout"]/div[@class="WordSection1"]/p[3]/text()').get().strip()
+                item['title'] = response.xpath('//div[@id="mainlayout"]/div[@class="WordSection1"]/p[3]/text()').get().strip()
             except AttributeError as e:
                 self.log(f'failed to parse title from {response.url}: {e}', level=logging.ERROR)
             try:
                 content = [text.strip() for text in response.xpath('//div[@id="mainlayout"]/p//text()').getall()]
-                supple_idx = content.index('附　則')
+                sub_idx = content.index('附　則')
                 reason_idx = content.index('理　由')
-                if supple_idx > reason_idx:
+                if sub_idx > reason_idx:
                     raise ValueError('REASON comes before HUSOKU')
-                data['main'] = '\n'.join(content[:supple_idx])
-                data['supple'] = '\n'.join(content[supple_idx + 1:reason_idx])
-                data['reason'] = '\n'.join(content[reason_idx + 1:])
+                item['main'] = '\n'.join(content[:sub_idx])
+                item['sub'] = '\n'.join(content[sub_idx + 1:reason_idx])
+                item['reason'] = '\n'.join(content[reason_idx + 1:])
             except ValueError as e:
                 self.log(f'failed to parse MAIN, HUSOKU, REASON from {response.url}: {e}', level=logging.ERROR)
-            return data
+            return item
 
-        directory = Path('./data/{0}/{1}/{2}'.format(response.meta['category'], response.meta['kaiji'], response.meta['number']))
-        directory.mkdir(parents=True, exist_ok=True)
+        def build_houan_html_item(response):
+            return HouanHtmlItem(meta=response.meta, html=response.body)
 
-        html_path = directory / 'houan.html'
-        with open(html_path, 'wb') as f:
-            f.write(response.body)
-        self.log(f'saved {html_path}')
-
-        json_path = directory / 'houan.json'
-        with open(json_path, 'w') as f:
-            json.dump(build_dict(response), f, ensure_ascii=False)
-        self.log(f'saved {json_path}')
+        yield build_houan_item(response)
+        yield build_houan_html_item(response)
