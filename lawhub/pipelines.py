@@ -14,7 +14,6 @@ class GianPipeline(object):
 
         directory = build_output_directory_path(item['meta'])
         directory.mkdir(parents=True, exist_ok=True)
-
         if isinstance(item, HouanItem):
             self.save_houan_item(item, directory / 'houan.json')
         elif isinstance(item, KeikaItem):
@@ -23,6 +22,7 @@ class GianPipeline(object):
             self.save_html_item(item, directory / 'houan.html')
         elif isinstance(item, KeikaHtmlItem):
             self.save_html_item(item, directory / 'keika.html')
+        return item
 
     @staticmethod
     def save_houan_item(item, path):
