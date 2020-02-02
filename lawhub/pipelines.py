@@ -22,6 +22,10 @@ class GianPipeline(object):
             self.save_html_item(item, directory / 'houan.html')
         elif isinstance(item, KeikaHtmlItem):
             self.save_html_item(item, directory / 'keika.html')
+
+        if isinstance(item, HouanHtmlItem) or isinstance(item, KeikaHtmlItem):
+            item['html'] = ''  # adhoc fix to ignore decoding error in scrapinghub
+
         return item
 
     @staticmethod
