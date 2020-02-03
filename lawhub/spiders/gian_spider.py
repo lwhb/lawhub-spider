@@ -71,14 +71,15 @@ class GianSpider(scrapy.Spider):
     def parse_houan(self, response):
         def build_houan_item(response):
             item = HouanItem(meta=response.meta)
-            try:
-                item['title'] = ''.join(response.xpath('//div[@id="mainlayout"]/div[@class="WordSection1"]/p[3]//text()').getall()).strip()
-                if item['title'] == '':
-                    self.log(f'extracted title in {response.url} is empty', level=logging.WARNING)
-            except AttributeError as e:
-                self.log(f'failed to parse title from {response.url}: {e}', level=logging.ERROR)
+
+            item['title'] = ''.join(response.xpath('//div[@id="mainlayout"]/div[@class="WordSection1"]/p[3]//text()').getall()).strip()
+            if item['title'] == '':
+                self.log(f'failed to parse title from {response.url}', level=logging.ERROR)
+
             try:
                 content = [text.strip() for text in response.xpath('//div[@id="mainlayout"]/p//text()').getall()]
+                if not content:
+                    content = [text.strip() for text in response.xpath('//div[@id="mainlayout"]/div[@class="WordSection1"]/p[position()>3]//text()').getall()]
                 sub_idx = content.index('附　則')
                 reason_idx = content.index('理　由')
                 if sub_idx > reason_idx:
