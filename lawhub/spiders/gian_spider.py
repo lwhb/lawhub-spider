@@ -72,7 +72,7 @@ class GianSpider(scrapy.Spider):
         def build_houan_item(response):
             item = HouanItem(meta=response.meta)
             try:
-                item['title'] = response.xpath('//div[@id="mainlayout"]/div[@class="WordSection1"]/p[3]/text()').get().strip()
+                item['title'] = response.xpath('//div[@id="mainlayout"]/div[@class="WordSection1"]/p[3]//text()').get().strip()
             except AttributeError as e:
                 self.log(f'failed to parse title from {response.url}: {e}', level=logging.ERROR)
             try:
