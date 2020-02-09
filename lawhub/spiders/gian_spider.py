@@ -15,7 +15,7 @@ class GianSpider(scrapy.Spider):
     }
 
     def parse(self, response):
-        for table, category in zip(response.xpath('//table')[:3], ('syuhou', 'sanhou', 'kakuhou')):
+        for table, category in zip(response.xpath('//table')[:3], ('syu', 'san', 'kaku')):
             for row in table.xpath('./tr')[1:]:  # skip header
                 meta = {'category': category}
                 try:
