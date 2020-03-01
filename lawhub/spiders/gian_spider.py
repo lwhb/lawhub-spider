@@ -77,9 +77,10 @@ class GianSpider(scrapy.Spider):
                 self.log(f'failed to parse title from {response.url}', level=logging.ERROR)
 
             try:
-                content = [text.strip() for text in response.xpath('//div[@id="mainlayout"]/p//text()').getall()]
-                if not content:
-                    content = [text.strip() for text in response.xpath('//div[@id="mainlayout"]/div[@class="WordSection1"]/p[position()>3]//text()').getall()]
+                ps = response.xpath('//div[@id="mainlayout"]/p')
+                if not ps:
+                    ps = response.xpath('//div[@id="mainlayout"]/div[@class="WordSection1"]/p[position()>3]')
+                content = [''.join(p.xpath('.//text()').getall()).strip() for p in ps]
                 sub_idx = content.index('附　則')
                 reason_idx = content.index('理　由')
                 if sub_idx > reason_idx:
