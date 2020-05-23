@@ -7,9 +7,7 @@ from lawhub.items import HouanItem, KeikaItem, KeikaHtmlItem, HouanHtmlItem
 
 class GianSpider(scrapy.Spider):
     name = "gian"
-    start_urls = [
-        'http://www.shugiin.go.jp/internet/itdb_gian.nsf/html/gian/menu.htm'
-    ]
+    start_urls = ['http://www.shugiin.go.jp/internet/itdb_gian.nsf/html/gian/menu.htm']
     custom_settings = {
         'ITEM_PIPELINES': {'lawhub.pipelines.GianPipeline': 0}
     }

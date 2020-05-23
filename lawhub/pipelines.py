@@ -1,8 +1,8 @@
 import json
 from logging import getLogger
-from pathlib import Path
 
 from lawhub.items import HouanItem, KeikaItem, HouanHtmlItem, KeikaHtmlItem
+from lawhub.settings import LAWHUB_DATA
 
 logger = getLogger('pipelines')
 
@@ -10,7 +10,7 @@ logger = getLogger('pipelines')
 class GianPipeline(object):
     def process_item(self, item, spider):
         def build_output_directory_path(meta):
-            return Path('./data/{0}/{1}/{2}'.format(meta['category'], meta['kaiji'], meta['number']))
+            return LAWHUB_DATA / 'gian' / str(meta['category']) / str(meta['kaiji']) / str(meta['number'])
 
         directory = build_output_directory_path(item['meta'])
         directory.mkdir(parents=True, exist_ok=True)
