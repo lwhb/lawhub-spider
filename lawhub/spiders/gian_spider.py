@@ -1,39 +1,61 @@
+"""
+衆議院の議案一覧ページから各議案の内容（経過、本文）を取得し、$LAWHUB_DATA/gian以下に保存する
+
+index.tsv: gian_idとメタデータの対応表
+$category/$kaiji/$number以下に各議案の内容を保存する
+"""
+
 import logging
 
+import pandas as pd
 import scrapy
 
 from lawhub.items import HouanItem, KeikaItem, KeikaHtmlItem, HouanHtmlItem
+from lawhub.settings import LAWHUB_DATA
 
 
 class GianSpider(scrapy.Spider):
     name = "gian"
     start_urls = ['http://www.shugiin.go.jp/internet/itdb_gian.nsf/html/gian/menu.htm']
+    directory = LAWHUB_DATA / 'gian'
     custom_settings = {
         'ITEM_PIPELINES': {'lawhub.pipelines.GianPipeline': 0}
     }
 
     def parse(self, response):
+        records = []
         for table, category in zip(response.xpath('//table')[:3], ('syu', 'san', 'kaku')):
             for row in table.xpath('./tr')[1:]:  # skip header
-                meta = {'category': category}
                 try:
-                    meta['kaiji'] = int(row.xpath('./td[@headers="GIAN.KAIJI"]/span/text()').get())
-                    meta['number'] = int(row.xpath('./td[@headers="GIAN.NUMBER"]/span/text()').get())
-                except TypeError as e:
-                    self.log(f'failed to parse KAIJI and NUMBER from row:\n{row.get()}', level=logging.ERROR)
+                    record = {
+                        'category': category,
+                        'kaiji': int(row.xpath('./td[@headers="GIAN.KAIJI"]/span/text()').get()),
+                        'number': int(row.xpath('./td[@headers="GIAN.NUMBER"]/span/text()').get()),
+                        'keika': row.xpath('./td[@headers="GIAN.KLINK"]//a/@href').get(),
+                        'honbun': row.xpath('./td[@headers="GIAN.HLINK"]//a/@href').get()
+                    }
+                    record['gian_id'] = '-'.join([record['category'], str(record['kaiji']), str(record['number'])])
+                    record['directory'] = self.directory / record['category'] / str(record['kaiji']) / str(record['number'])
+                except Exception as e:
+                    self.log(f'failed to instantiate gian record from row:\n{row.get()}\n{e}', level=logging.ERROR)
                     continue
+                records.append(record)
 
-                keika_link = row.xpath('./td[@headers="GIAN.KLINK"]//a/@href').get()
-                if keika_link:
-                    yield response.follow(keika_link, callback=self.parse_keika, meta=meta)
-                else:
-                    self.log(f'failed to parse KEIKA link from row:\n{row.get()}', level=logging.WARNING)
+        self.directory.mkdir(parents=True, exist_ok=True)
+        index_fp = self.directory / 'index.tsv'
+        index_df = pd.DataFrame(records, columns=['gian_id', 'category', 'kaiji', 'number', 'keika', 'honbun', 'directory'])
+        index_df.to_csv(index_fp, sep='\t', index=False)
+        self.log(f'saved index in {index_fp}')
 
-                honbun_link = row.xpath('./td[@headers="GIAN.HLINK"]//a/@href').get()
-                if honbun_link:
-                    yield response.follow(honbun_link, callback=self.parse_honbun, meta=meta)
-                else:
-                    self.log(f'failed to parse HONBUN link from row:\n{row.get()}', level=logging.WARNING)
+        for record in records:
+            meta = {
+                'gian_id': record['gian_id'],
+                'directory': record['directory']
+            }
+            if record['keika']:
+                yield response.follow(record['keika'], callback=self.parse_keika, meta=meta)
+            if record['honbun']:
+                yield response.follow(record['honbun'], callback=self.parse_honbun, meta=meta)
 
     def parse_keika(self, response):
         def build_keika_item(response):
@@ -44,7 +66,7 @@ class GianSpider(scrapy.Spider):
                     key = td1.xpath('.//text()').get()
                     val = td2.xpath('.//text()').get() or ''
                     data[key] = val
-                except ValueError as e:
+                except ValueError:
                     self.log(f'failed to parse key-value:\n{row.get()}')
             return KeikaItem(meta=response.meta, data=data)
 
