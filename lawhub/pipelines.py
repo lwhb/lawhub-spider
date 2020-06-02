@@ -2,17 +2,13 @@ import json
 from logging import getLogger
 
 from lawhub.items import HouanItem, KeikaItem, HouanHtmlItem, KeikaHtmlItem
-from lawhub.settings import LAWHUB_DATA
 
 logger = getLogger('pipelines')
 
 
 class GianPipeline(object):
     def process_item(self, item, spider):
-        def build_output_directory_path(meta):
-            return LAWHUB_DATA / 'gian' / str(meta['category']) / str(meta['kaiji']) / str(meta['number'])
-
-        directory = build_output_directory_path(item['meta'])
+        directory = item['meta']['directory']
         directory.mkdir(parents=True, exist_ok=True)
         if isinstance(item, HouanItem):
             self.save_houan_item(item, directory / 'houan.json')

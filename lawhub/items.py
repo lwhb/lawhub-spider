@@ -5,8 +5,7 @@ class BaseItem(scrapy.Item):
     meta = scrapy.Field()
 
     def __repr__(self):
-        id_ = '-'.join(map(str, [self['meta']['category'], self['meta']['kaiji'], self['meta']['number']]))
-        return f'<{self.__class__.__name__} {id_}>'
+        return f'<{self.__class__.__name__} {self["meta"]["gian_id"]}>'
 
 
 class HouanItem(BaseItem):

@@ -1,12 +1,11 @@
 """
-EGovの法令データ一括ダウンロードページから交付年ごとに圧縮されたZipファイルを取得し、$LAWHUB_DATA/egov以下に保存する
+e-Govの法令データ一括ダウンロードページから交付年ごとに圧縮されたZipファイルを取得し、$LAWHUB_DATA/egov以下に保存する
 
 zip.meta: 交付年とzipファイル名の対応表
 [0-9]+.zip: 交付年ごとのzipファイル
 """
 
 import re
-import shutil
 
 import pandas as pd
 import scrapy
@@ -29,16 +28,12 @@ class EgovSpider(scrapy.Spider):
                 records.append({'yid': yid, 'zid': zid})
             except AttributeError:
                 pass
-        meta_df = pd.DataFrame(records, columns=['yid', 'zid'])
 
-        # clean directory
-        if self.directory.exists():
-            shutil.rmtree(self.directory)
-        self.directory.mkdir(parents=True)
-
+        self.directory.mkdir(parents=True, exist_ok=True)
         meta_fp = self.directory / 'zip.meta'
+        meta_df = pd.DataFrame(records, columns=['yid', 'zid'])
         meta_df.to_csv(meta_fp, sep='\t', index=False)
-        self.log(f'saved meta data to {meta_fp}')
+        self.log(f'saved meta data in {meta_fp}')
 
         for zid in meta_df['zid']:
             yield response.follow(f'/download/{zid}.zip', callback=self.save_zip)
