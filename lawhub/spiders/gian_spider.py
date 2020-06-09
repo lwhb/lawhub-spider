@@ -6,6 +6,7 @@ $category/$kaiji/$number以下に各議案の内容を保存する
 """
 
 import logging
+from urllib.parse import urljoin
 
 import pandas as pd
 import scrapy
@@ -31,8 +32,8 @@ class GianSpider(scrapy.Spider):
                         'category': category,
                         'kaiji': int(row.xpath('./td[@headers="GIAN.KAIJI"]/span/text()').get()),
                         'number': int(row.xpath('./td[@headers="GIAN.NUMBER"]/span/text()').get()),
-                        'keika': row.xpath('./td[@headers="GIAN.KLINK"]//a/@href').get(),
-                        'honbun': row.xpath('./td[@headers="GIAN.HLINK"]//a/@href').get()
+                        'keika': urljoin(response.url, row.xpath('./td[@headers="GIAN.KLINK"]//a/@href').get()),
+                        'honbun': urljoin(response.url, row.xpath('./td[@headers="GIAN.HLINK"]//a/@href').get())
                     }
                     record['gian_id'] = '-'.join([record['category'], str(record['kaiji']), str(record['number'])])
                     record['directory'] = self.directory / record['category'] / str(record['kaiji']) / str(record['number'])
