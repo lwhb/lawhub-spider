@@ -92,7 +92,7 @@ HTTPCACHE_DIR = 'httpcache'
 # HTTPCACHE_IGNORE_HTTP_CODES = []
 # HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
-LOG_LEVEL = 'DEBUG'
+LOG_LEVEL = 'INFO'
 FEED_EXPORT_ENCODING = 'utf-8'
 
 LAWHUB_DATA = Path(os.environ['LAWHUB_DATA']) if 'LAWHUB_DATA' in os.environ else Path('/var/tmp')
